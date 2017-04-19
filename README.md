@@ -41,17 +41,17 @@ TODO: algebraic effect, many ops in one effect
 -- boolean type
 true
 -- function abstraction
-fun x : unit -> true
+fun f (x : unit) : bool -> true
 -- declare effect
 effect choice : unit -> bool
 -- operation call, has type (bool ! choice)
 #choice ()
 
-fun x : unit -> #choice ()
+fun f (x : unit) : bool -> #choice()
 -- has type (unit -> (bool ! choice))
 
 handle
-    x ()
+    f ()
 with
     | #choice () k -> k true
 
