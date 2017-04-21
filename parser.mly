@@ -59,12 +59,23 @@ plain_expr:
     { e }
   | FUN f = VAR LPAREN x = VAR COLON ty1 = ty RPAREN c = comp
     { Fun (f, x, ty1, c) }
-  | HANDLER BAR p = pattern
+  | HANDLER p = pattern
     { Handler (p, []) }
+  | HANDLER p = pattern ps = patterns
+    { Handler (p, ps) }
 
+(* value pattern *)
 pattern:
-  | VAL v = VAR COLON ty1 = ty TARROW c = comp
+  | BAR VAL v = VAR COLON ty1 = ty TARROW c = comp
     { PVal (v, ty1, c) }
+
+(* effect operation patterns *)
+patterns:
+  (* | #choice y k -> k true *)
+  | BAR OPHASH op = VAR e1 = VAR e2 = VAR TARROW c = comp
+    { PEffect (op, e1, e2, c) :: [] }
+  | BAR OPHASH op = VAR e1 = VAR e2 = VAR TARROW c = comp ps = patterns
+    { PEffect (op, e1, e2, c) :: ps }
 
 effect:
   | EFFECT e = VAR COLON ty1 = ty TARROW ty2 = ty

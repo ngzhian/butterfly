@@ -16,13 +16,10 @@ let collect_context (ast : toplevel list) : context =
   go ast []
 ;;
 
-let type_check (effects : context) (toplevel : toplevel) =
-  let ty = match toplevel with
+let type_of (effects : context) (toplevel : toplevel) =
+  match toplevel with
     | Expr e -> type_expr e effects, []
     | Comp c -> type_comp c effects
-  in
-  let _ = print_endline (string_of_dirty ty)
-  in ()
 
 let main () =
   (* exit if we don't get a filename *)
@@ -35,13 +32,18 @@ let main () =
   let lexbuf = Lexing.from_channel ch in
   let ast = (Parser.file Lexer.token) lexbuf in
 
-  (* first collect effects, assume they are global *)
+  (* first collect lets and effects, assume they are global *)
   let effects = collect_context ast in
   (* using the effects as context, type check the file *)
-  let _ = List.map (type_check effects) ast in
+  let types = List.map (type_of effects) ast in
+  let results =
+    List.map
+      (fun (tl, ty) ->
+         string_of_toplevel tl ^ " : " ^ (string_of_dirty ty))
+      (List.combine ast types) in
   (* type check all expr/comp in file *)
   (* when encounter an effect definition, add to context *)
-  print_endline (String.concat "\n" (List.map string_of_toplevel ast))
+  print_endline (String.concat "\n" results)
 ;;
 
 main ()
