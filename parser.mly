@@ -2,24 +2,17 @@
   open Syntax
 %}
 
-(* %token TINT *)
 %token TBOOL
 %token TUNIT
 %token TARROW
 %token <Syntax.name> VAR
-(* %token <int> INT *)
 %token TRUE FALSE
 %token EFFECT VAL
 %token OPHASH
 %token HANDLE WITH
 %token HANDLER
 %token BAR
-(* %token PLUS *)
-(* %token MINUS *)
-(* %token TIMES *)
 %token EQUAL
-  (* LESS *)
-(* %token IF THEN ELSE *)
 %token FUN
 %token COLON
 %token LPAREN RPAREN
@@ -30,12 +23,7 @@
 %start file
 %type <Syntax.toplevel list> file
 
-(* %nonassoc IS *)
-(* %nonassoc ELSE *)
-(* %nonassoc EQUAL LESS *)
-(* %left PLUS MINUS *)
-(* %left TIMES *)
-(* %right TARROW *)
+%right TARROW
 
 %%
 
@@ -71,7 +59,6 @@ pattern:
 
 (* effect operation patterns *)
 patterns:
-  (* | #choice y k -> k true *)
   | BAR OPHASH op = VAR e1 = VAR e2 = VAR TARROW c = comp
     { PEffect (op, e1, e2, c) :: [] }
   | BAR OPHASH op = VAR e1 = VAR e2 = VAR TARROW c = comp ps = patterns
@@ -117,8 +104,6 @@ ty:
     { TBool }
   | TUNIT
     { TUnit }
-  (* | TINT *)
-  (*   { TInt } *)
   | ty1 = ty TARROW ty2 = ty
     { TArrow (ty1, (ty2, [])) }
   | LPAREN t = ty RPAREN
