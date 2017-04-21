@@ -10,7 +10,7 @@ let collect_context (ast : toplevel list) : context =
     | Expr (Effect (e, ty1, ty2) as expr) :: xs ->
       go xs ((e, (type_expr expr acc, [])) :: acc)
     | Comp (Let (v, c)) :: xs ->
-      go xs ((v, type_comp c []) :: acc)
+      go xs ((v, type_comp c acc) :: acc)
     | _::xs -> go xs acc
   in
   go ast []
@@ -33,9 +33,9 @@ let main () =
   let ast = (Parser.file Lexer.token) lexbuf in
 
   (* first collect lets and effects, assume they are global *)
-  let effects = collect_context ast in
-  (* using the effects as context, type check the file *)
-  let types = List.map (type_of effects) ast in
+  let context = collect_context ast in
+  (* using the context as context, type check the file *)
+  let types = List.map (type_of context) ast in
   let results =
     List.map
       (fun (tl, ty) ->

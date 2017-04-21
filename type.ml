@@ -4,15 +4,24 @@ open Syntax
 type context = (name * dirty) list
 
 (* Check each clause and ensure consistency *)
-let rec type_clause c context : dirty =
+let rec type_clause c (context : context) : dirty =
   match c with
   | PVal (x, ty, c) ->
     let cty = type_comp c context in
     (* lookup x in context, or lookup the effect associated with this clause, and the type is the result type *)
     cty
   | PEffect (op, y, k, c) ->
+    let ty = try List.assoc op context with Not_found -> failwith "Effect nf" in
+    (* check that op is indeed an op *)
+    let kty = (match ty with
+        (* TODO fix this, k is hardcoded to be of type ty2 -> (Unit, []) *)
+        | (Syntax.TEffect (_, ty1, ty2), dirt) -> (k, (TArrow(ty2, (TUnit, [])), []))
+        | _ -> failwith "wrong"
+      ) in
+    let cls_context = (y, ty) :: kty :: context in
     (* look up op in context to get the type of effect *)
-    let cty = type_comp c context in
+    (* k should match op *)
+    let cty = type_comp c cls_context in
     cty
 
 (* Type a pure expression *)
@@ -32,20 +41,17 @@ and type_expr e (context : context) =
 
   | Var x ->
     (* type of a variable is looked up from the context *)
-    fst (List.assoc x context)
+    fst (try List.assoc x context with Not_found -> failwith "var not found")
 
-  (* type check handlers *)
   | Handler (cls, clauses) ->
     (* first try to get the arg type of the handler using the value clause *)
-    let handler_context, arg_ty = (match cls with
+    let val_pat_context, arg_ty = (match cls with
         | PVal (x, ty, _) -> (x, (ty, [])) :: context, ty
-     | _ -> failwith "fail") in
+        | _ -> failwith "Missing value pattern clause") in
     (* get type of the value clause *)
-    let ty1, dirt1 = type_clause cls handler_context in
-    (* TODO need to add continuation type into the context of clauses *)
-    (* TODO need to add operation argument into the context of clauses *)
+    let ty1, dirt1 = type_clause cls val_pat_context in
     (* get types of all the patter clauses *)
-    let tys = List.map (fun c -> type_clause c context ) clauses in
+    let tys = List.map (fun c -> type_clause c context) clauses in
     let op_of = function
       | PEffect (op, _, _, _) -> op
       | _ -> failwith "Unexpected value pattern" in

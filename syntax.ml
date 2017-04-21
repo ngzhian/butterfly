@@ -69,14 +69,15 @@ and string_of_ty (ty : ty) =
   | TBool  -> "TBool"
   | TArrow (ty1, ty2) -> "TArrow(" ^ (string_of_ty ty1) ^ "," ^ (string_of_dirty ty2) ^ ")"
   | TEffect (e, ty1, ty2) -> (string_of_ty ty1) ^ " -{" ^ e ^ "}> " ^ (string_of_ty ty2)
-  | THandler (_,_) -> "THandler"
+  | THandler (ty1, ty2) -> (string_of_dirty ty1) ^ "=>" ^ (string_of_dirty ty2)
 
 and string_of_tys ty1 ty2 =
   (string_of_ty ty1) ^ "->" ^ (string_of_ty ty2)
 
 and string_of_dirty (ty: dirty) =
   match ty with
-  | (ty, dirt) -> string_of_ty ty ^ "[" ^ (String.concat ", " dirt) ^ "]"
+  | (ty, dirt) -> string_of_ty ty ^
+                  if List.length dirt = 0 then "" else "[" ^ (String.concat ", " dirt) ^ "]"
 
 (* Top level used to read in files *)
 type toplevel = Expr of expr | Comp of comp
