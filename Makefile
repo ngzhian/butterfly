@@ -5,7 +5,7 @@ BUILD=native
 # BUILD=byte
 
 SRCDIR=src
-MAIN=test
+MAIN=main
 
 .PHONY: build help clean
 
