@@ -35,15 +35,11 @@ let main () =
   (* first collect lets and effects, assume they are global *)
   let context = collect_context ast in
   (* using the context as context, type check the file *)
-  let types = List.map (type_of context) ast in
-  let results =
-    List.map
-      (fun (tl, ty) ->
-         string_of_toplevel tl ^ " : " ^ (string_of_dirty ty))
-      (List.combine ast types) in
-  (* type check all expr/comp in file *)
-  (* when encounter an effect definition, add to context *)
-  print_endline (String.concat "\n" results)
+  List.iter
+    (fun tl ->
+       let ty = type_of context tl in
+       print_endline (string_of_toplevel tl ^ " : " ^ (string_of_dirty ty)))
+    ast
 ;;
 
 main ()
