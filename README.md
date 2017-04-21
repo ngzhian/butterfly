@@ -57,6 +57,7 @@ with
 
 -- has type true
 handler
+| val x : ty -> val true
 | #choice k -> true
 -- has type #choice => true
 ```

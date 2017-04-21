@@ -25,11 +25,16 @@ let type_check (effects : context) (toplevel : toplevel) =
   in ()
 
 let main () =
-  (* TODO warn if file name not given *)
+  (* exit if we don't get a filename *)
+  if Array.length Sys.argv < 2
+  then failwith "Filename not given";
+
+  (* parse the file into an ast *)
   let filename = Sys.argv.(1) in
   let ch = open_in filename in
   let lexbuf = Lexing.from_channel ch in
   let ast = (Parser.file Lexer.token) lexbuf in
+
   (* first collect effects, assume they are global *)
   let effects = collect_context ast in
   (* using the effects as context, type check the file *)
