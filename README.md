@@ -1,6 +1,8 @@
 # Butterfly
 
-Butterfly is a mini functional language with a type and effect system.
+Butterfly is a toy functional language with a type and effect system.
+
+It doesn't do any evaluation (yet), it can only tell you the type of an expression.
 
 ## Type and effects system
 
@@ -9,16 +11,17 @@ The terms of butterfly are split into two kinds, effect-free pure expressions, a
 ```
 Expressions e       ::= <x> | true | false | () | fun x : A -> c | h | i
 Effect interface i  ::= effect I : A
-Handler h           ::= handler ocs
+Handler h           ::= handler | val x : A -> c [ocs]
 Operation cases ocs ::= #op x k -> c | ocs
 Computation c       ::=   val e
-                        | #op e (y k)
+                        | #op e
                         | handle c with e
+                        | e_1 e_2
 ```
 
 The expressions contains, variables, the booleans, unit, function abstraction, handlers, and effect interface definitions.
 A handler is a pattern-matcher for effects, it contains multiple operation cases to match on effects.
-Computations contains expressions, an operation call, or a handle construct.
+Computations contains expressions, an operation call, handle construct, function application.
 
 Consequently, the type system admits two kinds of types, the pure types for expressions and the dirty type for computations.
 
@@ -32,32 +35,8 @@ and handler types that take computations of incoming type `C_` to outgoing types
 
 A dirty type `C_` is a pure type `A` tagged with a `delta`, which is a set of effect types `E^R` that may possibly be called during evaluation.
 
-TODO: add function application
 TODO: algebraic effect, many ops in one effect
 
 ## Examples
 
-```
--- boolean type
-true
--- function abstraction
-fun f (x : unit) : bool -> true
--- declare effect
-effect choice : unit -> bool
--- operation call, has type (bool ! choice)
-#choice ()
-
-fun f (x : unit) : bool -> #choice()
--- has type (unit -> (bool ! choice))
-
-handle
-    f ()
-with
-    | #choice () k -> k true
-
--- has type true
-handler
-| val x : ty -> val true
-| #choice k -> true
--- has type #choice => true
-```
+Check out [test.bfly].
