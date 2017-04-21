@@ -4,7 +4,7 @@ open Syntax
 type context = (name * dirty) list
 
 (* Check each clause and ensure consistency *)
-let rec type_clause c (context : context) : dirty =
+let rec type_clause c (context : context) k_ty : dirty =
   match c with
   | PVal (x, ty, c) ->
     let cty = type_comp c context in
@@ -14,8 +14,7 @@ let rec type_clause c (context : context) : dirty =
     let ty = try List.assoc op context with Not_found -> failwith "Effect nf" in
     (* check that op is indeed an op *)
     let kty = (match ty with
-        (* TODO fix this, k is hardcoded to be of type ty2 -> (Unit, []) *)
-        | (Syntax.TEffect (_, ty1, ty2), dirt) -> (k, (TArrow(ty2, (TUnit, [])), []))
+        | (Syntax.TEffect (_, ty1, ty2), dirt) -> (k, (TArrow(ty2, k_ty), []))
         | _ -> failwith "wrong"
       ) in
     let cls_context = (y, ty) :: kty :: context in
@@ -23,6 +22,30 @@ let rec type_clause c (context : context) : dirty =
     (* k should match op *)
     let cty = type_comp c cls_context in
     cty
+
+and type_handler cls clauses context : ty =
+    (* arg type of the handler using the value clause *)
+    let val_pat_context, arg_ty = (match cls with
+        | PVal (x, ty, _) -> (x, (ty, [])) :: context, ty
+        | _ -> failwith "Missing value pattern clause") in
+    (* get type of the value clause *)
+    (* this is also the type that all other clauses should have *)
+    let dty1 = type_clause cls val_pat_context (TUnit, []) in
+    let add_dirt (ty, d) d' = (ty, d @ d') in
+    (* get types of all the pattern clauses *)
+    let k_ty = dty1 in
+    let tys = List.map (fun c -> type_clause c context k_ty) clauses in
+    let op_of = function
+      | PEffect (op, _, _, _) -> op
+      | _ -> failwith "Unexpected value pattern" in
+    (* dirt that can be handled by the clauses by pattern matching *)
+    let handled_dirt = List.map op_of clauses in
+    (* dirt produced by computation in the pattern clauses *)
+    let dirt2 = List.concat (List.map snd tys) in
+    (* in handling an effect, dirt can be produced by the value and pattern clauses *)
+    (* the resulting type of a handler is like an arrow, *)
+    (* it has an input type with some dirt, and produced some dirt as well *)
+    THandler ((arg_ty, handled_dirt), add_dirt dty1 dirt2)
 
 (* Type a pure expression *)
 and type_expr e (context : context) =
@@ -44,26 +67,7 @@ and type_expr e (context : context) =
     fst (try List.assoc x context with Not_found -> failwith "var not found")
 
   | Handler (cls, clauses) ->
-    (* first try to get the arg type of the handler using the value clause *)
-    let val_pat_context, arg_ty = (match cls with
-        | PVal (x, ty, _) -> (x, (ty, [])) :: context, ty
-        | _ -> failwith "Missing value pattern clause") in
-    (* get type of the value clause *)
-    let ty1, dirt1 = type_clause cls val_pat_context in
-    (* get types of all the patter clauses *)
-    let tys = List.map (fun c -> type_clause c context) clauses in
-    let op_of = function
-      | PEffect (op, _, _, _) -> op
-      | _ -> failwith "Unexpected value pattern" in
-    (* dirt that can be handled by the clauses by pattern matching *)
-    let handled_dirt = List.map op_of clauses in
-    (* dirt produced by computation in the pattern clauses *)
-    let dirt2 = List.concat (List.map snd tys) in
-    (* in handling an effect, dirt can be produced by the value and pattern clauses *)
-    let produced_dirt = dirt1 @ dirt2 in
-    (* the resulting type of a handler is like an arrow, *)
-    (* it has an input type with some dirt, and produced some dirt as well *)
-    THandler ((arg_ty, handled_dirt), (ty1, produced_dirt))
+    type_handler cls clauses context
 
 (* Type an effectful expression *)
 and type_comp c context : dirty =
@@ -83,13 +87,20 @@ and type_comp c context : dirty =
        else failwith "Incompatible type between handler and computation"
      | _ -> failwith "Can only handle with an expression of type Handler")
 
-  | App (e, c) ->
-    let e_ty = type_expr e context in
+  | App (e1, e2) ->
+    let e_ty = type_expr e1 context in
+    let e2_ty = type_expr e2 context in
     (match e_ty with
      (* normal function application *)
-     | TArrow (t1, t2) -> t2
+     | TArrow (ty1, ty2) ->
+       if ty1 = e2_ty (* make sure function param and formal arg matches *)
+       then ty2
+       else failwith "TArrow type mismatch"
      (* calling an effectful operation *)
-     | TEffect (op, t1, t2) -> t2, [op]
+     | TEffect (op, ty1, ty2) ->
+       if ty1 = e2_ty
+       then ty2, [op]
+       else failwith "TEffect type mismatch"
      | _ -> failwith "Cannot apply non-arrow or non-effect type")
 
   | Let (x, c) -> type_comp c context
