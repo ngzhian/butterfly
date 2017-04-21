@@ -13,7 +13,7 @@ with
 
 let hb = val handler
   | val v : bool -> val true
-  | #choice y k -> val true
+  | #choice y k -> k true
 ;;
 
 handle
