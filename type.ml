@@ -1,7 +1,7 @@
 open Syntax
 
 (* Context maps a name (variable) to a type *)
-type context = (name * ty) list
+type context = (name * dirty) list
 
 (* Check each clause and ensure consistency *)
 let rec type_clause c context : dirty =
@@ -9,7 +9,6 @@ let rec type_clause c context : dirty =
   | PVal (x, ty, c) ->
     let cty = type_comp c context in
     (* lookup x in context, or lookup the effect associated with this clause, and the type is the result type *)
-    (* todo need to figure out somehow what the input type is *)
     cty
   | PEffect (op, y, k, c) ->
     (* look up op in context to get the type of effect *)
@@ -17,27 +16,34 @@ let rec type_clause c context : dirty =
     cty
 
 (* Type a pure expression *)
-and type_expr e context : ty =
+and type_expr e (context : context) =
   match e with
   | Unit  -> TUnit
+
   | Bool _ -> TBool
+
   | Fun (_, _, ty1, body) ->
-    (* types will be provided as annotations on the function *)
+    (* argument types will be provided as annotations on the function *)
     let ty2 = type_comp body context in
     TArrow (ty1, ty2)
+
+  (* effect declaration *)
   | Effect (e, ty1, ty2) -> TEffect (e, ty1, ty2)
+
   | Var x ->
     (* type of a variable is looked up from the context *)
-    List.assoc x context
+    fst (List.assoc x context)
 
   (* type check handlers *)
   | Handler (cls, clauses) ->
     (* first try to get the arg type of the handler using the value clause *)
     let handler_context, arg_ty = (match cls with
-     | PVal (x, ty, _) -> (x, ty) :: context, ty
+        | PVal (x, ty, _) -> (x, (ty, [])) :: context, ty
      | _ -> failwith "fail") in
     (* get type of the value clause *)
     let ty1, dirt1 = type_clause cls handler_context in
+    (* TODO need to add continuation type into the context of clauses *)
+    (* TODO need to add operation argument into the context of clauses *)
     (* get types of all the patter clauses *)
     let tys = List.map (fun c -> type_clause c context ) clauses in
     let op_of = function
