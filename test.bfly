@@ -1,0 +1,23 @@
+effect choice : unit -> bool
+;;
+
+let h = val handler
+  | val v : bool -> val true
+;;
+
+handle
+  #choice ()
+with
+  h
+;;
+
+let hb = val handler
+  | val v : bool -> val true
+  | #choice y k -> val true
+;;
+
+handle
+  #choice ()
+with
+  hb
+;;
