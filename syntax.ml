@@ -36,7 +36,6 @@ and clause =                             (* clauses in a handler *)
 
 and comp =
   | Val of expr           (* Expression *)
-  | Op of name * expr     (* Calling an operation, #op () *)
   | Handle of comp * expr (* Handling a computation, handle (#op ()) with handler *)
   | App of expr * comp    (* Function application *)
   | Let of name * comp    (* Let expression *)
@@ -59,7 +58,6 @@ and string_of_clause (cls: clause) : string =
 and string_of_comp (c: comp) : string =
   (match c with
    | Val e -> string_of_expr e
-   | Op (op, arg) -> "#" ^ op ^ " " ^ string_of_expr arg
    | Handle (c,h) -> "handle " ^ (string_of_comp c) ^ " with " ^ (string_of_expr h)
    | App (e1, c2) -> (string_of_expr e1) ^ " " ^ (string_of_comp c2)
    | Let (v, c) -> "let " ^ v ^ " = " ^ (string_of_comp c))

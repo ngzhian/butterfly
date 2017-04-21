@@ -3,34 +3,27 @@ open Syntax
 (* Context maps a name (variable) to a type *)
 type context = (name * ty) list
 
-(* Effect environment maps a name to an effect *)
-type effects = (name * (ty * ty)) list
-
-let string_of_effect_env env =
-  String.concat ", " (List.map (fun (n, (ty1, ty2)) -> n) env)
-
 (* Check each clause and ensure consistency *)
-let rec type_clause c context effects : dirty =
+let rec type_clause c context : dirty =
   match c with
   | PVal (x, ty, c) ->
-    let cty = type_comp c context effects in
+    let cty = type_comp c context in
     (* lookup x in context, or lookup the effect associated with this clause, and the type is the result type *)
     (* todo need to figure out somehow what the input type is *)
     cty
   | PEffect (op, y, k, c) ->
-    (* look up op in effects to get the type of effect *)
-    (* let ty1, ty2 = List.assoc op effects in *)
-    let cty = type_comp c context effects in
+    (* look up op in context to get the type of effect *)
+    let cty = type_comp c context in
     cty
 
 (* Type a pure expression *)
-and type_expr e context effects : ty =
+and type_expr e context : ty =
   match e with
   | Unit  -> TUnit
   | Bool _ -> TBool
   | Fun (_, _, ty1, body) ->
     (* types will be provided as annotations on the function *)
-    let ty2 = type_comp body context effects in
+    let ty2 = type_comp body context in
     TArrow (ty1, ty2)
   | Effect (e, ty1, ty2) -> TEffect (e, ty1, ty2)
   | Var x ->
@@ -44,9 +37,9 @@ and type_expr e context effects : ty =
      | PVal (x, ty, _) -> (x, ty) :: context, ty
      | _ -> failwith "fail") in
     (* get type of the value clause *)
-    let ty1, dirt1 = type_clause cls handler_context effects in
+    let ty1, dirt1 = type_clause cls handler_context in
     (* get types of all the patter clauses *)
-    let tys = List.map (fun c -> type_clause c context effects) clauses in
+    let tys = List.map (fun c -> type_clause c context ) clauses in
     let op_of = function
       | PEffect (op, _, _, _) -> op
       | _ -> failwith "Unexpected value pattern" in
@@ -61,19 +54,16 @@ and type_expr e context effects : ty =
     THandler ((arg_ty, handled_dirt), (ty1, produced_dirt))
 
 (* Type an effectful expression *)
-and type_comp c context effects : dirty =
+and type_comp c context : dirty =
   match c with
-  | Val x -> type_expr x context effects, []
-  (* lookup op in effects map, ensure types match *)
-  (* probably want to store effects in a separate map *)
-  | Op (o, _) -> snd (List.assoc o effects), [o]
+  | Val x -> type_expr x context , []
 
   | Handle (c, e) ->
     (* e should be of type Handler *)
-    let handler_ty = type_expr e context effects in
+    let handler_ty = type_expr e context in
     (match handler_ty with
      | THandler ((ty1, handled_dirt), (ty2, produced_dirt)) ->
-       let comp_ty, comp_dirt = type_comp c context effects in
+       let comp_ty, comp_dirt = type_comp c context in
        (* ensure that handler input and computation has same type *)
        (* the dirt doesnt matter here, we only use it to calculate the dirt of this comp *)
        if comp_ty == ty1
@@ -82,8 +72,12 @@ and type_comp c context effects : dirty =
      | _ -> failwith "Can only handle with an expression of type Handler")
 
   | App (e, c) ->
-    let e_ty = type_expr e context [] in
+    let e_ty = type_expr e context in
     (match e_ty with
+     (* normal function application *)
      | TArrow (t1, t2) -> t2
-     | _ -> failwith "Cannot apply non-arrow type")
-  | Let (x, c) -> type_comp c context []
+     (* calling an effectful operation *)
+     | TEffect (op, t1, t2) -> t2, [op]
+     | _ -> failwith "Cannot apply non-arrow or non-effect type")
+
+  | Let (x, c) -> type_comp c context
