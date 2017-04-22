@@ -21,3 +21,6 @@ handle
 with
   hb
 ;;
+
+fun f (x : bool) -> val x
+;;

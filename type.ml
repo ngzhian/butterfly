@@ -54,9 +54,10 @@ and type_expr e (context : context) =
 
   | Bool _ -> TBool
 
-  | Fun (_, _, ty1, body) ->
+  | Fun (_, x, ty1, body) ->
     (* argument types will be provided as annotations on the function *)
-    let ty2 = type_comp body context in
+    let context' = (x, (ty1, [])) :: context in
+    let ty2 = type_comp body context' in
     TArrow (ty1, ty2)
 
   (* effect declaration *)

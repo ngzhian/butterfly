@@ -14,6 +14,7 @@ type ty =
   | TEffect of string * ty * ty (* Effect type, name, argument type and return type *)
                                 (* TODO should make this algebraic *)
   | THandler of dirty * dirty   (* Handler type, takes a dirty type to another dirty type *)
+  | TyParam of int              (* Type parameter *)
 
 (* dirt is the list of effects that may be called during evaluation *)
 and dirt = op list

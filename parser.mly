@@ -45,7 +45,7 @@ plain_expr:
     { Unit }
   | e = plain_app_expr
     { e }
-  | FUN f = VAR LPAREN x = VAR COLON ty1 = ty RPAREN c = comp
+  | FUN f = VAR LPAREN x = VAR COLON ty1 = ty RPAREN TARROW c = comp
     { Fun (f, x, ty1, c) }
   | HANDLER p = pattern
     { Handler (p, []) }
