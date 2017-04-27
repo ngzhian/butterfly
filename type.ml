@@ -3,6 +3,9 @@ open Syntax
 (* Context maps a name (variable) to a type *)
 type context = (name * dirty) list
 
+let add_pure name ty context = (name, (ty, [])) :: context
+let add_dirty name ty context = (name, ty) :: context
+
 (* Check each clause and ensure consistency *)
 let rec type_clause c (context : context) k_ty : dirty =
   match c with
@@ -56,7 +59,7 @@ and type_expr e (context : context) =
 
   | Fun (_, x, ty1, body) ->
     (* argument types will be provided as annotations on the function *)
-    let context' = (x, (ty1, [])) :: context in
+    let context' = add_pure x ty1 context in
     let ty2 = type_comp body context' in
     TArrow (ty1, ty2)
 
