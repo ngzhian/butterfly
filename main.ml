@@ -21,6 +21,13 @@ let type_of (effects : context) (toplevel : toplevel) =
     | Expr e -> type_expr e effects, []
     | Comp c -> type_comp c effects
 
+let infer (effects : context) (toplevel : toplevel) =
+  let senv = List.map (fun (n, (t, d)) -> n, Forall ([], (t, d))) effects in
+  let (t, d), s = match toplevel with
+    | Syntax.Expr e -> let t, s = infer e senv in (t, []), s
+    | Syntax.Comp c -> infer_c c senv in
+  (t, d), s
+
 let main () =
   (* exit if we don't get a filename *)
   if Array.length Sys.argv < 2
@@ -37,6 +44,11 @@ let main () =
   (* using the context as context, type check the file *)
   List.iter
     (fun tl ->
+       let (it, id), is = infer context tl in
+       let _ = print_endline "### Inferred ###" in
+       let _ = print_endline (string_of_subs is) in
+       let _ = print_endline (string_of_ty it) in
+       let _ = print_endline ">>> Typed ###" in
        let ty = type_of context tl in
        print_endline (string_of_toplevel tl ^ " : " ^ (string_of_dirty ty)))
     ast

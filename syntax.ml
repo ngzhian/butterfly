@@ -14,13 +14,16 @@ type ty =
   | TEffect of string * ty * ty (* Effect type, name, argument type and return type *)
                                 (* TODO should make this algebraic *)
   | THandler of dirty * dirty   (* Handler type, takes a dirty type to another dirty type *)
-  | TyParam of int              (* Type parameter *)
+  | TyVar of int              (* Type parameter *)
 
 (* dirt is the list of effects that may be called during evaluation *)
 and dirt = op list
 
 (* Dirty types are pure types with dirt, dirt is a list of effect names *)
 and dirty = ty * dirt
+
+type scheme =
+    Forall of (int list) * dirty
 
 (* Expressions are pure, evaluating them will not result in side effects *)
 type expr =
@@ -71,6 +74,7 @@ and string_of_ty (ty : ty) =
   | TArrow (ty1, ty2) -> "TArrow(" ^ (string_of_ty ty1) ^ "," ^ (string_of_dirty ty2) ^ ")"
   | TEffect (e, ty1, ty2) -> (string_of_ty ty1) ^ " -{" ^ e ^ "}> " ^ (string_of_ty ty2)
   | THandler (ty1, ty2) -> (string_of_dirty ty1) ^ "=>" ^ (string_of_dirty ty2)
+  | TyVar tv -> string_of_int tv ^ "'"
 
 and string_of_tys ty1 ty2 =
   (string_of_ty ty1) ^ "->" ^ (string_of_ty ty2)
