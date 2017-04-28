@@ -1,6 +1,7 @@
 open Parser
 open Syntax
 open Type
+open Infer
 
 (* Inititialize context by collecting all effects and lets *)
 let collect_context (ast : toplevel list) : context =
@@ -47,7 +48,7 @@ let main () =
        let (it, id), is = infer context tl in
        let _ = print_endline "### Inferred ###" in
        let _ = print_endline (string_of_subs is) in
-       let _ = print_endline (string_of_ty it) in
+       let _ = print_endline (string_of_dirty (it, id)) in
        let _ = print_endline ">>> Typed ###" in
        let ty = type_of context tl in
        print_endline (string_of_toplevel tl ^ " : " ^ (string_of_dirty ty)))
