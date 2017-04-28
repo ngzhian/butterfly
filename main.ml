@@ -46,12 +46,11 @@ let main () =
   List.iter
     (fun tl ->
        let (it, id), is = infer context tl in
-       let _ = print_endline "### Inferred ###" in
-       let _ = print_endline (string_of_subs is) in
-       let _ = print_endline (string_of_dirty (it, id)) in
-       let _ = print_endline ">>> Typed ###" in
-       let ty = type_of context tl in
-       print_endline (string_of_toplevel tl ^ " : " ^ (string_of_dirty ty)))
+       (* let _ = print_endline (string_of_subs is) in *)
+       print_endline (string_of_toplevel tl ^ " : " ^ string_of_dirty (it, id))
+       (* let ty = type_of context tl in *)
+       (* print_endline (string_of_toplevel tl ^ " : " ^ (string_of_dirty ty)) *)
+    )
     ast
 ;;
 

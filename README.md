@@ -39,4 +39,16 @@ TODO: algebraic effect, many ops in one effect
 
 ## Examples
 
-Check out [test.bfly].
+First, build the project:
+
+```
+make
+```
+
+This should build a executable called `main.native`, run it on a example file:
+
+```
+./main.native test.bfly
+```
+
+This will output the terms in the file and also their inferred types.
