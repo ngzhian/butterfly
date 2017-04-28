@@ -39,6 +39,8 @@ TODO: algebraic effect, many ops in one effect
 
 ## Examples
 
+(This project is written in OCaml, and requires menhir, so make sure that is installed.)
+
 First, build the project:
 
 ```
