@@ -15,7 +15,7 @@ let string_of_subs subs = String.concat ", " (List.map string_of_sub subs)
 (* substitue ty using subs *)
 let rec sub subs dty =
   match dty with
-  | TUnit, _ | TBool, _ | TEffect _, _ | THandler _, _ -> dty
+  | TUnit, _ | TBool, _ | TInt, _ | TEffect _, _ | THandler _, _ -> dty
   | TArrow (t1, (t2, d)), dirt ->
     let arg_ty, _ = sub subs (t1, []) in
     TArrow(arg_ty, (sub subs (t2, d))), dirt
@@ -40,7 +40,7 @@ let fresh () =
 
 let rec ftv (ty : ty) =
   match ty with
-  | TUnit | TBool
+  | TUnit | TBool | TInt
   | TEffect _ | THandler _
     -> []
   | TArrow (t1, (t2, _)) -> ftv(t1) @ ftv(t2)
@@ -73,6 +73,7 @@ let rec unify (t1 : ty) (t2 : ty) =
   match t1, t2 with
   | TUnit, TUnit -> []
   | TBool, TBool -> []
+  | TInt, TInt -> []
   | TArrow (t1, (t2,d)), TArrow (t1', (t2', d')) ->
     let s1 = unify t1 t1' in
     let s2 = unify_d (sub s1 (t2, d)) (sub s1 (t2', d)) in
@@ -100,7 +101,7 @@ let rec unify (t1 : ty) (t2 : ty) =
     let s1 = unify t1 t1' in
     let s2 = unify_d (t2, [op]) t2' in
     s1 @ s2
-  | _ -> failwith "Cannot unify"
+  | _ -> failwith ("Cannot unify: " ^ (string_of_ty t1) ^ " with " ^ (string_of_ty t2))
 
 (* right now only unify types *)
 and unify_d (t1, d1) (t2, d2) =
@@ -126,6 +127,7 @@ let rec infer (term : expr) senv : ty * subs =
   match term with
   | Unit  -> TUnit, []
   | Bool _ -> TBool, []
+  | Int _ -> TInt, []
 
   | Fun (_,x,_, body) ->
     let tv = fresh (), [] in

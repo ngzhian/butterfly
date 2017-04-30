@@ -2,10 +2,9 @@
   open Syntax
 %}
 
-%token TBOOL
-%token TUNIT
-%token TARROW
+%token TUNIT TBOOL TINT TARROW
 %token <Syntax.name> VAR
+%token <int> INT
 %token TRUE FALSE
 %token EFFECT VAL
 %token OPHASH
@@ -13,6 +12,7 @@
 %token HANDLER
 %token BAR
 %token EQUAL
+%token PLUS
 %token FUN
 %token COLON
 %token LPAREN RPAREN
@@ -45,6 +45,8 @@ plain_expr:
     { Unit }
   | e = plain_app_expr
     { e }
+  | FUN f = VAR x = VAR TARROW c = comp
+    { Fun (f, x, TInt, c) }
   | FUN f = VAR LPAREN x = VAR COLON ty1 = ty RPAREN TARROW c = comp
     { Fun (f, x, ty1, c) }
   | HANDLER p = pattern
@@ -81,10 +83,12 @@ simple_expr: plain_simple_expr { $1 }
 plain_simple_expr:
   | x = VAR
     { Var x }
-  | TRUE    
+  | TRUE
     { Bool true }
   | FALSE
     { Bool false }
+  | INT
+    { Int $1 }
   | LPAREN e = plain_expr RPAREN
     { e }
 
@@ -100,10 +104,12 @@ plain_comp:
     { Let (v, c) }
 
 ty:
-  | TBOOL
-    { TBool }
   | TUNIT
     { TUnit }
+  | TBOOL
+    { TBool }
+  | TINT
+    { TInt }
   | ty1 = ty TARROW ty2 = ty
     { TArrow (ty1, (ty2, [])) }
   | LPAREN t = ty RPAREN

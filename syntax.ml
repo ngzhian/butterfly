@@ -10,6 +10,7 @@ type op = string
 type ty =
     TUnit                       (* Unit *)
   | TBool                       (* Boolean *)
+  | TInt                        (* Integers *)
   | TArrow of ty * dirty        (* Function abstraction, argument type and return type *)
   | TEffect of string * ty * ty (* Effect type, name, argument type and return type *)
                                 (* TODO should make this algebraic *)
@@ -29,6 +30,7 @@ type scheme =
 type expr =
   | Unit
   | Bool of bool                    (* Boolean constant *)
+  | Int of int                      (* Integer constant *)
   | Fun of name * name * ty * comp  (* Function abstraction, fun f (x : bool) -> true *)
   | Effect of name * ty * ty        (* Effect definition, effect choice : unit -> bool *)
   | Var of name                     (* Variable *)
@@ -50,6 +52,7 @@ let rec string_of_expr (e : expr) : string =
   match e with
   | Unit -> "()"
   | Bool b -> string_of_bool b
+  | Int i -> string_of_int i
   | Fun (f, arg, tya, body) -> "fun " ^ f ^ "(" ^ arg ^ ")" ^ " : " ^ (string_of_comp body)
   | Effect (e,ty1,ty2) -> "effect " ^ e ^ " : " ^ (string_of_tys ty1 ty2)
   | Var x -> x
@@ -71,6 +74,7 @@ and string_of_ty (ty : ty) =
   match ty with
   | TUnit  -> "TUnit"
   | TBool  -> "TBool"
+  | TInt   -> "TInt"
   | TArrow (ty1, ty2) -> "TArrow(" ^ (string_of_ty ty1) ^ "," ^ (string_of_dirty ty2) ^ ")"
   | TEffect (e, ty1, ty2) -> (string_of_ty ty1) ^ " -{" ^ e ^ "}> " ^ (string_of_ty ty2)
   | THandler (ty1, ty2) -> (string_of_dirty ty1) ^ "=>" ^ (string_of_dirty ty2)

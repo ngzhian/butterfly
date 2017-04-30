@@ -12,6 +12,8 @@ let collect_context (ast : toplevel list) : context =
       go xs ((e, (type_expr expr acc, [])) :: acc)
     | Comp (Let (v, c)) :: xs ->
       go xs ((v, type_comp c acc) :: acc)
+    | Expr (Fun (f, arg, ty, body) as fn) :: xs ->
+      go xs ((f, (type_expr fn acc, [])) :: acc)
     | _::xs -> go xs acc
   in
   go ast []

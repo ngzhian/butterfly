@@ -57,6 +57,8 @@ and type_expr e (context : context) =
 
   | Bool _ -> TBool
 
+  | Int _ -> TInt
+
   | Fun (_, x, ty1, body) ->
     (* argument types will be provided as annotations on the function *)
     let context' = add_pure x ty1 context in
@@ -68,7 +70,7 @@ and type_expr e (context : context) =
 
   | Var x ->
     (* type of a variable is looked up from the context *)
-    fst (try List.assoc x context with Not_found -> failwith "var not found")
+    fst (try List.assoc x context with Not_found -> failwith ("var " ^ x ^ " not found"))
 
   | Handler (cls, clauses) ->
     type_handler cls clauses context

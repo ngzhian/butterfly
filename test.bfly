@@ -16,11 +16,19 @@ let hb = val handler
   | #choice y k -> k true
 ;;
 
-handle
+let x = handle
   #choice ()
 with
-  hb
+    handler
+      | val v : bool -> val true
+      | #choice y k -> k true
 ;;
 
 fun f (x : bool) -> val x
+;;
+
+fun inc x -> val 1
+;;
+
+let x = inc 1
 ;;
